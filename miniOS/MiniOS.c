@@ -5,12 +5,20 @@
 #include <string.h>
 
 #define MAX_QUEUE_SIZE 100
+#define MAX_QUEUE_COUNT 4
 
-static MessageQueue g_msgQueue;
+static MessageQueue g_msgQueues[MAX_QUEUE_COUNT];
 static pthread_t g_timerThread;
 static int g_timerRunning = 0;
 static TimerCallback g_timerCallback = NULL;
 static uint32_t g_timerInterval = 0;
+
+static MessageQueue *GetQueue(uint32_t queueId) {
+    if (queueId >= MAX_QUEUE_COUNT) {
+        return NULL;
+    }
+    return &g_msgQueues[queueId];
+}
 
 static void *TimerThreadFunc(void *arg) {
     (void)arg;
@@ -25,14 +33,15 @@ static void *TimerThreadFunc(void *arg) {
 }
 
 void OS_Init(void) {
-    g_msgQueue.capacity = MAX_QUEUE_SIZE;
-    g_msgQueue.queue = (Message *)malloc(sizeof(Message) * g_msgQueue.capacity);
-    g_msgQueue.head = 0;
-    g_msgQueue.tail = 0;
-    g_msgQueue.count = 0;
-
-    pthread_mutex_init(&g_msgQueue.lock, NULL);
-    pthread_cond_init(&g_msgQueue.not_empty, NULL);
+    for (uint32_t i = 0; i < MAX_QUEUE_COUNT; i++) {
+        g_msgQueues[i].capacity = MAX_QUEUE_SIZE;
+        g_msgQueues[i].queue = (Message *)malloc(sizeof(Message) * g_msgQueues[i].capacity);
+        g_msgQueues[i].head = 0;
+        g_msgQueues[i].tail = 0;
+        g_msgQueues[i].count = 0;
+        pthread_mutex_init(&g_msgQueues[i].lock, NULL);
+        pthread_cond_init(&g_msgQueues[i].not_empty, NULL);
+    }
 }
 
 void OS_CreateTask(void (*taskFunc)(void), const char *name) {
@@ -42,27 +51,37 @@ void OS_CreateTask(void (*taskFunc)(void), const char *name) {
     pthread_detach(thread);
 }
 
-void OS_GetMsg(Message *msg) {
-    pthread_mutex_lock(&g_msgQueue.lock);
-    while (g_msgQueue.count == 0) {
-        pthread_cond_wait(&g_msgQueue.not_empty, &g_msgQueue.lock);
+void OS_GetMsg(uint32_t queueId, Message *msg) {
+    MessageQueue *queue = GetQueue(queueId);
+    if (!queue || !msg) {
+        return;
     }
-    *msg = g_msgQueue.queue[g_msgQueue.head];
-    g_msgQueue.head = (g_msgQueue.head + 1) % g_msgQueue.capacity;
-    g_msgQueue.count--;
-    pthread_mutex_unlock(&g_msgQueue.lock);
+
+    pthread_mutex_lock(&queue->lock);
+    while (queue->count == 0) {
+        pthread_cond_wait(&queue->not_empty, &queue->lock);
+    }
+    *msg = queue->queue[queue->head];
+    queue->head = (queue->head + 1) % queue->capacity;
+    queue->count--;
+    pthread_mutex_unlock(&queue->lock);
 }
 
-void OS_SendMsg(uint32_t msgId, void *data) {
-    pthread_mutex_lock(&g_msgQueue.lock);
-    if (g_msgQueue.count < g_msgQueue.capacity) {
-        g_msgQueue.queue[g_msgQueue.tail].MsgId = msgId;
-        g_msgQueue.queue[g_msgQueue.tail].Data = data;
-        g_msgQueue.tail = (g_msgQueue.tail + 1) % g_msgQueue.capacity;
-        g_msgQueue.count++;
-        pthread_cond_signal(&g_msgQueue.not_empty);
+void OS_SendMsg(uint32_t queueId, uint32_t msgId, void *data) {
+    MessageQueue *queue = GetQueue(queueId);
+    if (!queue) {
+        return;
     }
-    pthread_mutex_unlock(&g_msgQueue.lock);
+
+    pthread_mutex_lock(&queue->lock);
+    if (queue->count < queue->capacity) {
+        queue->queue[queue->tail].MsgId = msgId;
+        queue->queue[queue->tail].Data = data;
+        queue->tail = (queue->tail + 1) % queue->capacity;
+        queue->count++;
+        pthread_cond_signal(&queue->not_empty);
+    }
+    pthread_mutex_unlock(&queue->lock);
 }
 
 void OS_SetupTimer(TimerCallback callback, uint32_t intervalMs) {

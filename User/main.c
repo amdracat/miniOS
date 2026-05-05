@@ -35,25 +35,28 @@ CommandEntry cmdTable[] = {
 
 /* Command handlers */
 void CMD1_Handler(void) {
-    printf("[CMD1_Handler] Sending MSG_ID_1\n");
-    OS_SendMsg(MSG_ID_1, NULL);
+    printf("[CMD1_Handler] Sending MSG_ID_1 to MAIN and SUB queues\n");
+    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_1, NULL);
+    OS_SendMsg(OS_QUEUE_SUB, MSG_ID_1, NULL);
 }
 
 void CMD2_Handler(void) {
-    printf("[CMD2_Handler] Sending MSG_ID_2\n");
-    OS_SendMsg(MSG_ID_2, NULL);
+    printf("[CMD2_Handler] Sending MSG_ID_2 to MAIN and SUB queues\n");
+    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_2, NULL);
+    OS_SendMsg(OS_QUEUE_SUB, MSG_ID_2, NULL);
 }
 
 void TimerHandler(void) {
-    printf("[TimerHandler] Sending MSG_ID_TIMER\n");
-    OS_SendMsg(MSG_ID_TIMER, NULL);
+    printf("[TimerHandler] Sending MSG_ID_TIMER to MAIN and SUB queues\n");
+    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_TIMER, NULL);
+    OS_SendMsg(OS_QUEUE_SUB, MSG_ID_TIMER, NULL);
 }
 
 /* Main task */
 void MainTask(void) {
     printf("[MainTask] Started\n");
     while (1) {
-        OS_GetMsg(&Msg);
+        OS_GetMsg(OS_QUEUE_MAIN, &Msg);
         printf("[MainTask] Received message ID: %d\n", Msg.MsgId);
         
         switch (Msg.MsgId) {
@@ -68,6 +71,7 @@ void MainTask(void) {
                 break;
             case MSG_ID_MODULE_EVENT:
                 {
+                    printf("[MainTask] Handling MSG_ID_MODULE_EVENT\n");
                     ModuleEventData *eventData = (ModuleEventData *)Msg.Data;
                     if (eventData) {
                         MainTask_Event(eventData->event, eventData->value);
@@ -86,7 +90,7 @@ void MainTask(void) {
 void SubTask(void) {
     printf("[SubTask] Started\n");
     while (1) {
-        OS_GetMsg(&Msg);
+        OS_GetMsg(OS_QUEUE_SUB, &Msg);
         printf("[SubTask] Received message ID: %d\n", Msg.MsgId);
         
         switch (Msg.MsgId) {

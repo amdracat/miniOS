@@ -2,7 +2,7 @@
 #include "../miniOS/MiniOS.h"
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <stdio.h>
 static int g_speed = 0;
 static int g_mode = 0;
 static int g_initialized = 0;
@@ -10,11 +10,13 @@ static int g_initialized = 0;
 static void send_module_event(MainTaskEvent event, int value) {
     ModuleEventData *data = (ModuleEventData *)malloc(sizeof(ModuleEventData));
     if (!data) {
+        printf("[send_module_event] Failed to allocate memory for ModuleEventData\n");
         return;
     }
     data->event = event;
     data->value = value;
-    OS_SendMsg(MSG_ID_MODULE_EVENT, data);
+    printf("[send_module_event] Sending event: %d value=%d\n", event, value);
+    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_MODULE_EVENT, data);
 }
 
 void Initialize(void) {
@@ -26,7 +28,6 @@ void SetSpeed(int speed) {
 }
 
 int GetSpeed(void) {
-    send_module_event(EVENT_GET_SPEED, 0);
     return g_speed;
 }
 
@@ -35,7 +36,6 @@ void ChangeMode(int mode) {
 }
 
 int GetMode(void) {
-    send_module_event(EVENT_GET_MODE, 0);
     return g_mode;
 }
 
@@ -47,6 +47,7 @@ void MainTask_Event(MainTaskEvent event, int value) {
             g_mode = 0;
             break;
         case EVENT_SET_SPEED:
+            printf("[MainTask_Event] EVENT_SET_SPEED: %d value=%d\n",g_initialized, value);
             if (g_initialized) {
                 g_speed = value;
             }
