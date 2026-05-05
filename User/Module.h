@@ -7,6 +7,7 @@ typedef enum {
     EVENT_GET_SPEED,
     EVENT_CHANGE_MODE,
     EVENT_CHANGE_MODE_ASYNC,
+    EVENT_CHANGE_MODE_ASYNC2,
     EVENT_GET_MODE
 } MainTaskEvent;
 

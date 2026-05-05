@@ -41,7 +41,9 @@ void OsTestLayer_Post(os_job_fn_t fn, void *arg,uint16_t size) {
     if (size > JOB_DATA_SIZE) {
         //abort();
     }
-    memcpy(job->data, arg, size);
+    if(arg != NULL){
+        memcpy(job->data, arg, size);
+    }
     job->next = NULL;
 
     if (job_tail) {

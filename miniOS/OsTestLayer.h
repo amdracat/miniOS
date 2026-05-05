@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 /* PC環境で定義、実機では未定義 */
-//#define OS_TEST_LAYER_ENABLE
+#define OS_TEST_LAYER_ENABLE
 
 typedef void (*os_job_fn_t)(void *arg);
 

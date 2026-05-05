@@ -44,6 +44,12 @@ int GetMode(void) {
 void mode1_handler(void* arg) {
     send_module_event(EVENT_CHANGE_MODE_ASYNC, 1);
 }
+void mode2_handler2(void* arg) {
+    send_module_event(EVENT_CHANGE_MODE_ASYNC, 2);
+}
+void mode2_handler(void* arg) {
+    send_module_event(EVENT_CHANGE_MODE_ASYNC2, 2);
+}
 void MainTask_Event(MainTaskEvent event, int value) {
     switch (event) {
         case EVENT_INITIALIZE:
@@ -66,6 +72,8 @@ void MainTask_Event(MainTaskEvent event, int value) {
                     g_mode = value;
                 }else if(value == 1){
                     OsTestLayer_SetTimer(100, mode1_handler, NULL);
+                }else if(value == 2){
+                    OsTestLayer_SetTimer(100, mode2_handler, NULL);
                 }
             }
             break;
@@ -73,6 +81,9 @@ void MainTask_Event(MainTaskEvent event, int value) {
             if (g_initialized) {
                 g_mode = value;
             }
+            break;
+        case EVENT_CHANGE_MODE_ASYNC2:
+            OsTestLayer_SetTimer(100, mode2_handler2, NULL);
             break;
         case EVENT_GET_MODE:
             break;
