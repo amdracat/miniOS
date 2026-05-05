@@ -1,8 +1,11 @@
 #include "Module.h"
+
 #include "../miniOS/MiniOS.h"
+#include "../miniOS/OsTestLayer.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include "main.h"
 static int g_speed = 0;
 static int g_mode = 0;
 static int g_initialized = 0;
@@ -16,7 +19,7 @@ static void send_module_event(MainTaskEvent event, int value) {
     data->event = event;
     data->value = value;
     printf("[send_module_event] Sending event: %d value=%d\n", event, value);
-    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_MODULE_EVENT, data);
+    OS_SendMsgMain(MSG_ID_MODULE_EVENT, data);
 }
 
 void Initialize(void) {
@@ -38,7 +41,9 @@ void ChangeMode(int mode) {
 int GetMode(void) {
     return g_mode;
 }
-
+void mode1_handler(void* arg) {
+    send_module_event(EVENT_CHANGE_MODE_ASYNC, 1);
+}
 void MainTask_Event(MainTaskEvent event, int value) {
     switch (event) {
         case EVENT_INITIALIZE:
@@ -56,7 +61,16 @@ void MainTask_Event(MainTaskEvent event, int value) {
             break;
         case EVENT_CHANGE_MODE:
             if (g_initialized) {
-                usleep(30000);
+                if(value == 3){
+                    usleep(60000);
+                    g_mode = value;
+                }else if(value == 1){
+                    OsTestLayer_SetTimer(100, mode1_handler, NULL);
+                }
+            }
+            break;
+        case EVENT_CHANGE_MODE_ASYNC:
+            if (g_initialized) {
                 g_mode = value;
             }
             break;

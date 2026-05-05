@@ -6,6 +6,7 @@ typedef enum {
     EVENT_SET_SPEED,
     EVENT_GET_SPEED,
     EVENT_CHANGE_MODE,
+    EVENT_CHANGE_MODE_ASYNC,
     EVENT_GET_MODE
 } MainTaskEvent;
 
@@ -19,7 +20,7 @@ typedef struct {
 void Initialize(void);
 void SetSpeed(int speed);
 int GetSpeed(void);
-void ChangeMode(int mode);
+void ChangeMode(int mode); // 3は同期処理で60ms、1は非同期で100ms
 int GetMode(void);
 
 void MainTask_Event(MainTaskEvent event, int value);

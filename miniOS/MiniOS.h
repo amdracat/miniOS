@@ -28,12 +28,15 @@ typedef struct {
     pthread_cond_t not_empty;
 } MessageQueue;
 
-typedef void (*TimerCallback)(void);
+typedef void (*TimerCallback)(void* arg);
 
 void OS_Init(void);
 void OS_CreateTask(void (*taskFunc)(void), const char *name);
 void OS_GetMsg(uint32_t queueId, Message *msg);
 void OS_SendMsg(uint32_t queueId, uint32_t msgId, void *data);
-void OS_SetupTimer(TimerCallback callback, uint32_t intervalMs);
+void OS_SetupTimer(TimerCallback callback, uint32_t intervalMs, void* arg);
+
+
+
 
 #endif /* MINIOS_H */

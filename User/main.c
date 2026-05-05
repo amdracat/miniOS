@@ -4,7 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "../miniOS/MiniOS.h"
+#include "../miniOS/OsTestLayer.h"
 #include "Module.h"
+#include "main.h"
 #include "Test_Module.h"
 
 /* Global message buffer */
@@ -16,7 +18,7 @@ char LogBuffer[256];
 /* Command handler prototypes */
 void CMD1_Handler(void);
 void CMD2_Handler(void);
-void TimerHandler(void);
+void TimerHandler(void* arg);
 
 /* Command table structure */
 typedef struct {
@@ -36,22 +38,42 @@ CommandEntry cmdTable[] = {
 /* Command handlers */
 void CMD1_Handler(void) {
     printf("[CMD1_Handler] Sending MSG_ID_1 to MAIN and SUB queues\n");
-    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_1, NULL);
-    OS_SendMsg(OS_QUEUE_SUB, MSG_ID_1, NULL);
+    OS_SendMsgMain((uint32_t)MSG_ID_1, (void *)NULL);
+    OS_SendMsgSub((uint32_t)MSG_ID_1, (void *)NULL);
 }
 
 void CMD2_Handler(void) {
     printf("[CMD2_Handler] Sending MSG_ID_2 to MAIN and SUB queues\n");
-    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_2, NULL);
-    OS_SendMsg(OS_QUEUE_SUB, MSG_ID_2, NULL);
+    OS_SendMsgMain((uint32_t)MSG_ID_2, (void *)NULL);
+    OS_SendMsgSub((uint32_t)MSG_ID_2, (void *)NULL);
 }
 
-void TimerHandler(void) {
+void TimerHandler(void* arg) {
     printf("[TimerHandler] Sending MSG_ID_TIMER to MAIN and SUB queues\n");
-    OS_SendMsg(OS_QUEUE_MAIN, MSG_ID_TIMER, NULL);
-    OS_SendMsg(OS_QUEUE_SUB, MSG_ID_TIMER, NULL);
+    OS_SendMsgMain((uint32_t)MSG_ID_TIMER, (void *)NULL);
+    OS_SendMsgSub((uint32_t)MSG_ID_TIMER, (void *)NULL);
+}
+void MainTaskFunc1(void* arg)
+{
+    printf("[MainTask] Handling MSG_ID_1 %d\n", (int)(intptr_t)arg);
 }
 
+void MainTaskFunc2(void* arg)
+{
+    printf("[MainTask] Handling MSG_ID_2 %d\n", (int)(intptr_t)arg);
+}
+void MainTaskTimer(void* arg)
+{
+    printf("[MainTask] Handling MSG_ID_TIMER %d\n", (int)(intptr_t)arg);
+}
+void MainTaskEventFunc(void* arg)
+{
+    ModuleEventData *eventData = (ModuleEventData *)arg;
+    if (eventData) {
+        printf("[MainTaskEventFunc] Handling event: %d value=%d\n", eventData->event, eventData->value);
+        MainTask_Event(eventData->event, eventData->value);
+    }
+}
 /* Main task */
 void MainTask(void) {
     printf("[MainTask] Started\n");
@@ -61,23 +83,16 @@ void MainTask(void) {
         
         switch (Msg.MsgId) {
             case MSG_ID_1:
-                printf("[MainTask] Handling MSG_ID_1\n");
+                OsTestLayer_Post(MainTaskFunc1, Msg.Data,sizeof(Msg.Data));
                 break;
             case MSG_ID_2:
-                printf("[MainTask] Handling MSG_ID_2\n");
+                OsTestLayer_Post(MainTaskFunc2, Msg.Data,sizeof(Msg.Data));
                 break;
             case MSG_ID_TIMER:
-                printf("[MainTask] Handling MSG_ID_TIMER\n");
+                OsTestLayer_Post(MainTaskTimer, Msg.Data,sizeof(Msg.Data));
                 break;
             case MSG_ID_MODULE_EVENT:
-                {
-                    printf("[MainTask] Handling MSG_ID_MODULE_EVENT\n");
-                    ModuleEventData *eventData = (ModuleEventData *)Msg.Data;
-                    if (eventData) {
-                        MainTask_Event(eventData->event, eventData->value);
-                        free(eventData);
-                    }
-                }
+                OsTestLayer_Post(MainTaskEventFunc, Msg.Data,sizeof(Msg.Data));
                 break;
             default:
                 printf("[MainTask] Handling unknown message ID: %d\n", Msg.MsgId);
@@ -174,7 +189,7 @@ int main(void) {
     printf("[main] LogTask created\n");
     
     /* Set up a timer to call TimerHandler every 1000 ms */
-    OS_SetupTimer(TimerHandler, 1000);
+    OsTestLayer_SetTimer(1000, TimerHandler, NULL);
     printf("[main] Timer set up (1000ms interval)\n");
     
     printf("=== MiniOS Simulator Ready ===\n\n");
@@ -187,6 +202,37 @@ int main(void) {
     return 0;
 }
 
+void OS_SendMsgMain(uint32_t msgId, void *data)
+{
+#if defined (OS_TEST_LAYER_ENABLE)
+    switch (msgId) {
+        case MSG_ID_1:
+            OsTestLayer_Post(MainTaskFunc1, data,sizeof(data));
+            break;
+        case MSG_ID_2:
+            OsTestLayer_Post(MainTaskFunc2, data,sizeof(data));
+            break;
+        case MSG_ID_TIMER:
+            OsTestLayer_Post(MainTaskTimer, data,sizeof(data));
+            break;
+        case MSG_ID_MODULE_EVENT:
+            OsTestLayer_Post(MainTaskEventFunc, data,sizeof(data));
+            break;
+        default:
+            printf("[OS_SendMsgMain] Unknown message ID: %d\n", msgId);
+            break;
+    }
+#else
+    OS_SendMsg(OS_QUEUE_MAIN, msgId, data);
+#endif
+}
+void OS_SendMsgSub(uint32_t msgId, void *data)
+{
+#if defined (OS_TEST_LAYER_ENABLE)
+#else
+    OS_SendMsg(OS_QUEUE_SUB, msgId, data);  
+#endif
+}
 
 
 

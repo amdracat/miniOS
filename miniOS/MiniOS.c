@@ -25,7 +25,7 @@ static void *TimerThreadFunc(void *arg) {
     if (g_timerRunning) {
         usleep(g_timerInterval * 1000);
         if (g_timerCallback) {
-            g_timerCallback();
+            g_timerCallback(NULL);
         }
         g_timerRunning = 0;
     }
@@ -84,13 +84,12 @@ void OS_SendMsg(uint32_t queueId, uint32_t msgId, void *data) {
     pthread_mutex_unlock(&queue->lock);
 }
 
-void OS_SetupTimer(TimerCallback callback, uint32_t intervalMs) {
+void OS_SetupTimer(TimerCallback callback, uint32_t intervalMs, void* arg) {
     g_timerCallback = callback;
     g_timerInterval = intervalMs;
     g_timerRunning = 1;
     pthread_create(&g_timerThread, NULL, TimerThreadFunc, NULL);
 }
-
 
 
 
