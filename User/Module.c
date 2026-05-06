@@ -74,6 +74,8 @@ void MainTask_Event(MainTaskEvent event, int value) {
                     OsTestLayer_SetTimer(100, mode1_handler, NULL);
                 }else if(value == 2){
                     OsTestLayer_SetTimer(100, mode2_handler, NULL);
+                }else if(value == 4){
+                    send_module_event(EVENT_CHANGE_MODE_CONTINUE, 4);
                 }
             }
             break;
@@ -87,6 +89,13 @@ void MainTask_Event(MainTaskEvent event, int value) {
             break;
         case EVENT_GET_MODE:
             break;
+        case EVENT_CHANGE_MODE_CONTINUE:
+            printf("[MainTask_Event] EVENT_CHANGE_MODE_CONTINUE: value=%d\n", value);
+            if(value !=0){
+                send_module_event(EVENT_CHANGE_MODE_CONTINUE, value-1);
+            }else{
+                send_module_event(EVENT_CHANGE_MODE_ASYNC, 4);
+            }
         default:
             break;
     }

@@ -44,6 +44,9 @@ void test_start(void) {
 
     ASSERT_EQ(2, GetMode());
 
+    ChangeMode(4);
+    OsTestLayer_Sim_RunAll();
+    ASSERT_EQ(4, GetMode());
 
     report_test_result();
 }

@@ -9,18 +9,14 @@
 
 typedef void (*os_job_fn_t)(void *arg);
 
-
 /* 初期化 */
 void OsTestLayer_Init(void);
-
 
 /* 非同期実行 */
 void OsTestLayer_Post(os_job_fn_t fn, void *arg,uint16_t size);
 
 /* タイマー */
 void OsTestLayer_SetTimer(uint32_t delay_ms, os_job_fn_t fn, void *arg);
-
-
 
 /* 手動スケジューリング（OS_MODE_MANUAL） */
 void OsTestLayer_Sim_RunOne(void);
