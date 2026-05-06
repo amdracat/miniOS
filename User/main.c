@@ -83,16 +83,16 @@ void MainTask(void) {
         
         switch (Msg.MsgId) {
             case MSG_ID_1:
-                OsTestLayer_Post(MainTaskFunc1, Msg.Data,sizeof(Msg.Data));
+                MainTaskFunc1(Msg.Data);
                 break;
             case MSG_ID_2:
-                OsTestLayer_Post(MainTaskFunc2, Msg.Data,sizeof(Msg.Data));
+                MainTaskFunc2(Msg.Data);
                 break;
             case MSG_ID_TIMER:
-                OsTestLayer_Post(MainTaskTimer, Msg.Data,sizeof(Msg.Data));
+                MainTaskTimer(Msg.Data);
                 break;
             case MSG_ID_MODULE_EVENT:
-                OsTestLayer_Post(MainTaskEventFunc, Msg.Data,sizeof(Msg.Data));
+                MainTaskEventFunc(Msg.Data);
                 break;
             default:
                 printf("[MainTask] Handling unknown message ID: %d\n", Msg.MsgId);

@@ -52,9 +52,6 @@ void OsTestLayer_Post(os_job_fn_t fn, void *arg,uint16_t size) {
         job_head = job;
     }
     job_tail = job;
-#else
-    (void)size;
-    fn(arg);
 #endif
 }
 
